@@ -1,0 +1,80 @@
+docker run:
+* docker client makes a call to docker server. Used to request for an image(an instance of a program)
+* if found in local image cache the program runs, else docker server, reaches out to community images that may have the same requested image name.
+* image is loaded into memory
+
+container:
+* a collection of resources allocated for a specific process
+* NOTE: an image is a file system snapshot that has a run command set to it.
+  - the image is then run using a container(a collection/ grouping of resources allocated for running a specific process)
+  - this includes system calls to the kernel which specify how much of a systems hard ware should be used for the given process.
+
+running containers:
+* docker ps 
+  - displays running docker containers
+* docker ps -all 
+  - displays run history of docker containers
+
+container lifecycle:
+* docker run = (docker create + docker start), in short if we run docker run on a image that doesn't exist we create it.
+* if docker create is run on an already existing image. The image id is returned
+* one can then run docker start -a <container id>. The "-a" tells docker to watch for output, and print it to the terminal
+
+docker system prune:
+* removes all containers that are stopped(no longer in use) and are using up disk space
+
+docker logs:
+* run docker logs <container id> to output the logs that have been emitted from the given container
+
+stopping running containers(docker stop || docker kill):
+* docker stop sends a hardware terminate signal(allows container to some time before terminating to do some clean up) 
+* docker kill sends an immediate kill signal(shutdown immediately)
+* ideal we should use docker stop(if command doesn't stop within 10 sencods and docker kill command is issued)
+
+running commands i.e. attaching terminal to STDIN of a container:
+* docker exec -it <container id> <command>
+  - exec allows another command to be run.
+  - -it allows us to provide input to the container
+  - we then provide the container id that we want to send commands to and  send the command.
+  - this allows us to interact with the container as if we have access to it's internal terminal(the "-it" command is what allows for that acces. If we run exec without it, the process would rung in the background)
+  - "-it":
+    - "-i" attaches our terminal to the STDIN channel of the given running process
+    - "-t" formats the STDOUT data to look as if it's still our terminal 
+
+open terminal in context of running container:
+* docker exec -it <container image> sh (this uses a shell to access an instance of a container, and attaches the STDIN channel of the given container, and formats the output)
+* docker run -it <container image> sh (when we don't run the container before accessing its shell, and go directly into the shell like this. We skip the initial output, but may be useful in certain usecases)
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+creating docker images:
+* specify a base image
+* install necessary programs
+* create a program start name for the image
+
+docker build <dir to build>:
+* FROM points to the base container that will be used to generate a new docker image
+* RUN  executes some command while preparing a custom image
+* CMD  specifies the the command to be run when we run an instance our custom image(a container)
+* after creating a docker config in Dockerfile, run the above command to create the docker image
+
+* RUN commands are commands that are exposed to us when the FROM command is used to install a base image.
+* docker build hands the Dockerfile over to docker-cli
+* every line of the Dockerfile will be a step in the build output log
+
+paraphrase:
+* FROM command allows us to specify a base image to create our image from.
+  - this base image exposes some commands that can be used to install certain programs
+* RUN command allows us to run the exposed commands for adding programs to our image.
+  - after using any of the exposed commands and adding new programs to our file system, a snapshot of the altered file sytem is taken
+
+tagging an image:
+* docker build -t <docker id></repo name>:<version>
+  -docker build -t vanely/redis:latest (if version that a container is being created for is latest. The :latest can be omitted)
+
+NOTE: we can manually create an image from a container instance similar to the flow that the Dockerfile goes through.
+* docker run -it <image> sh (create an instance of the container that we will be creating our custom image from, and open its shell)
+* inside of this container we can manually install the programs that would be exposed if we were to use this image as a base image.
+* after modifying its file system, we can take a snapshot of the modified file system, and assign a default command by doing the following.
+  - open a new terminal and run docker ps to the the running process's id, and run the following.
+  - docker commit -c 'CMD ["redis-server"]' <id of running container> (the output will be a custom id for our own use)
